@@ -1,4 +1,4 @@
 qexec
 =====
 
-for quoted exec : simple wrapper around os/exec
+for quoted exec : simple wrapper around `os/exec`
