@@ -2,10 +2,11 @@ package qexec
 
 import (
 	"bytes"
-	"github.com/kballard/go-shellquote"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/kballard/go-shellquote"
 )
 
 // Run executes the command in parameter after having correctly quoted it.
@@ -51,7 +52,7 @@ func run(name string, args []string) (string, error) {
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	cmd.Stdin = os.Stdin
-	cmd.Stderr = os.Stderr
+	cmd.Stderr = &out
 	if err := cmd.Run(); err != nil {
 		return "", err
 	}
