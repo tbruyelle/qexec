@@ -31,11 +31,7 @@ func Run(cmds ...string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	res, err := run(name, args)
-	if err != nil {
-		return "", err
-	}
-	return res, nil
+	return run(name, args)
 }
 
 func quote(cmds []string) (string, []string, error) {
@@ -53,8 +49,6 @@ func run(name string, args []string) (string, error) {
 	cmd.Stdout = &out
 	cmd.Stdin = os.Stdin
 	cmd.Stderr = &out
-	if err := cmd.Run(); err != nil {
-		return "", err
-	}
-	return strings.TrimSpace(out.String()), nil
+	err := cmd.Run()
+	return out.String(), err
 }
