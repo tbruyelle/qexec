@@ -1,6 +1,7 @@
 package qexec
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -37,16 +38,27 @@ func TestExitStatusSuccess(t *testing.T) {
 	cmd := "ls testdata"
 	_, err := Run(cmd)
 
-	status := ExitStatus(err)
+	status, err := ExitStatus(err)
 
 	assert.Equal(t, 0, status)
+	assert.Nil(t, err)
 }
 
 func TestExitStatusFailed(t *testing.T) {
 	cmd := "ls testdata/notexists"
 	_, err := Run(cmd)
 
-	status := ExitStatus(err)
+	status, err := ExitStatus(err)
 
 	assert.NotEqual(t, 0, status)
+	assert.Nil(t, err)
+}
+
+func TestExitStatusError(t *testing.T) {
+	err := errors.New("I'm not returned by cmd.Run")
+
+	status, err := ExitStatus(err)
+
+	assert.Equal(t, 0, status)
+	assert.NotNil(t, err)
 }

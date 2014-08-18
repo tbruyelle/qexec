@@ -37,9 +37,12 @@ func Run(cmds ...string) (string, error) {
 
 // ExitStatus tries to extract the exit status from the error.
 // This won't work on every platforms.
-func ExitStatus(err error) int {
+//
+// If a status has been extracted from the error, then the returned
+// error is null. Else the error in parameter is propagated.
+func ExitStatus(err error) (int, error) {
 	if err == nil {
-		return 0
+		return 0, nil
 	}
 	if exiterr, ok := err.(*exec.ExitError); ok {
 		// The program has exited with an exit code != 0
@@ -49,10 +52,10 @@ func ExitStatus(err error) int {
 		// defined for both Unix and Windows and in both cases has
 		// an ExitStatus() method with the same signature.
 		if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
-			return status.ExitStatus()
+			return status.ExitStatus(), nil
 		}
 	}
-	return 0
+	return 0, err
 }
 
 func quote(cmds []string) (string, []string, error) {
