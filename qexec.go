@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"syscall"
 
 	"github.com/kballard/go-shellquote"
 )
@@ -32,6 +33,26 @@ func Run(cmds ...string) (string, error) {
 		return "", err
 	}
 	return run(name, args)
+}
+
+// ExitStatus tries to extract the exit status from the error.
+// This won't work on every platforms.
+func ExitStatus(err error) int {
+	if err == nil {
+		return 0
+	}
+	if exiterr, ok := err.(*exec.ExitError); ok {
+		// The program has exited with an exit code != 0
+
+		// This works on both Unix and Windows. Although package
+		// syscall is generally platform dependent, WaitStatus is
+		// defined for both Unix and Windows and in both cases has
+		// an ExitStatus() method with the same signature.
+		if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
+			return status.ExitStatus()
+		}
+	}
+	return 0
 }
 
 func quote(cmds []string) (string, []string, error) {

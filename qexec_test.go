@@ -32,3 +32,21 @@ func TestRunMixed(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Equal(t, "ls: testdata/notexist: No such file or directory\ntestdata:\ntruc\n", output)
 }
+
+func TestExitStatusSuccess(t *testing.T) {
+	cmd := "ls testdata"
+	_, err := Run(cmd)
+
+	status := ExitStatus(err)
+
+	assert.Equal(t, 0, status)
+}
+
+func TestExitStatusFailed(t *testing.T) {
+	cmd := "ls testdata/notexists"
+	_, err := Run(cmd)
+
+	status := ExitStatus(err)
+
+	assert.NotEqual(t, 0, status)
+}
