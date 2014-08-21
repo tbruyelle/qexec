@@ -34,6 +34,19 @@ func TestRunMixed(t *testing.T) {
 	assert.Equal(t, "ls: testdata/notexist: No such file or directory\ntestdata:\ntruc\n", output)
 }
 
+func TestRunWithVar(t *testing.T) {
+	cmd := "echo $PWD"
+	exp, err := Run("pwd")
+	if err != nil {
+		t.Fatalf("Unable to prepare test : %s", err)
+	}
+
+	output, err := Run(cmd)
+
+	assert.Nil(t, err)
+	assert.Equal(t, exp, output)
+}
+
 func TestExitStatusSuccess(t *testing.T) {
 	cmd := "ls testdata"
 	_, err := Run(cmd)
@@ -61,4 +74,14 @@ func TestExitStatusError(t *testing.T) {
 
 	assert.Equal(t, 0, status)
 	assert.NotNil(t, err)
+}
+
+func TestQexecRun(t *testing.T) {
+	q := New()
+	q.AddVar("MY_VAR", "value")
+
+	output, err := q.Run("sh -c 'echo $MY_VAR'")
+
+	assert.Nil(t, err)
+	assert.Equal(t, "value\n", output)
 }

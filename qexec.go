@@ -2,6 +2,7 @@ package qexec
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -9,6 +10,31 @@ import (
 
 	"github.com/kballard/go-shellquote"
 )
+
+// Qexec holds the execution context.
+type Qexec struct {
+	vars map[string]string
+}
+
+// New returns an initialized Qexec struct.
+func New() *Qexec {
+	q := &Qexec{}
+	q.vars = make(map[string]string)
+	return q
+}
+
+// AddVar adds a new environment variable to the execution context.
+func (q *Qexec) AddVar(name, value string) {
+	q.vars[name] = value
+}
+
+func (q *Qexec) Run(cmds ...string) (string, error) {
+	var prefix []string
+	for k, v := range q.vars {
+		prefix = append(prefix, fmt.Sprintf("%s=%s", k, v))
+	}
+	return run(append(prefix, cmds...)...)
+}
 
 // Run executes the command in parameter after having correctly quoted it.
 // The command stdout is returned.
@@ -20,19 +46,25 @@ import (
 // Here if the executable contains any $ char, then the whole command is
 // wrapped by `sh -c "<command>"`.
 func Run(cmds ...string) (string, error) {
-	if strings.Contains(cmds[0], "$") {
-		// If the path to the executable contains env variables,
-		// then the command must be wrapped by `sh -c "<command>"`
-		wrap := []string{"sh", "-c", `"`}
-		wrap = append(wrap, cmds...)
-		wrap = append(wrap, `"`)
-		cmds = wrap
-	}
+	return run(cmds...)
+}
+
+func run(cmds ...string) (string, error) {
+	// Wrap the command with `sh -c '<command>'`
+	wrap := []string{"sh", "-c", `"`}
+	wrap = append(wrap, cmds...)
+	cmds = append(wrap, `"`)
 	name, args, err := quote(cmds)
 	if err != nil {
 		return "", err
 	}
-	return run(name, args)
+	cmd := exec.Command(name, args...)
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stdin = os.Stdin
+	cmd.Stderr = &out
+	err = cmd.Run()
+	return out.String(), err
 }
 
 // ExitStatus tries to extract the exit status from the error.
@@ -65,14 +97,4 @@ func quote(cmds []string) (string, []string, error) {
 		return "", nil, err
 	}
 	return input[0], input[1:], nil
-}
-
-func run(name string, args []string) (string, error) {
-	cmd := exec.Command(name, args...)
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stdin = os.Stdin
-	cmd.Stderr = &out
-	err := cmd.Run()
-	return out.String(), err
 }
