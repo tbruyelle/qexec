@@ -13,24 +13,20 @@ import (
 
 // Qexec holds the execution context.
 type Qexec struct {
-	vars map[string]string
+	// Vars can be used to add some new environment variable to the execution context.
+	Vars map[string]string
 }
 
 // New returns an initialized Qexec struct.
 func New() *Qexec {
 	q := &Qexec{}
-	q.vars = make(map[string]string)
+	q.Vars = make(map[string]string)
 	return q
-}
-
-// AddVar adds a new environment variable to the execution context.
-func (q *Qexec) AddVar(name, value string) {
-	q.vars[name] = value
 }
 
 func (q *Qexec) Run(cmds ...string) (string, error) {
 	var prefix []string
-	for k, v := range q.vars {
+	for k, v := range q.Vars {
 		prefix = append(prefix, fmt.Sprintf("%s=%s", k, v))
 	}
 	return run(append(prefix, cmds...)...)

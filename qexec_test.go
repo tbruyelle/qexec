@@ -78,7 +78,7 @@ func TestExitStatusError(t *testing.T) {
 
 func TestQexecRun(t *testing.T) {
 	q := New()
-	q.AddVar("MY_VAR", "value")
+	q.Vars["MY_VAR"] = "value"
 
 	output, err := q.Run("sh -c 'echo $MY_VAR'")
 
