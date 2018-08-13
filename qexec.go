@@ -3,6 +3,7 @@ package qexec
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -15,21 +16,23 @@ import (
 type Qexec struct {
 	// Vars can be used to add some new environment variable to the execution context.
 	Vars map[string]string
+	Out  io.Writer
 }
 
 // New returns an initialized Qexec struct.
 func New() *Qexec {
 	q := &Qexec{}
 	q.Vars = make(map[string]string)
+	q.Out = os.Stdout
 	return q
 }
 
-func (q *Qexec) Run(cmds ...string) (string, error) {
+func (q *Qexec) Run(cmds ...string) error {
 	var prefix []string
 	for k, v := range q.Vars {
 		prefix = append(prefix, fmt.Sprintf("%s=%s", k, v))
 	}
-	return run(append(prefix, cmds...)...)
+	return run(q.Out, append(prefix, cmds...)...)
 }
 
 // Run executes the command in parameter after having correctly quoted it.
@@ -42,25 +45,25 @@ func (q *Qexec) Run(cmds ...string) (string, error) {
 // Here if the executable contains any $ char, then the whole command is
 // wrapped by `sh -c "<command>"`.
 func Run(cmds ...string) (string, error) {
-	return run(cmds...)
+	var out bytes.Buffer
+	err := run(&out, cmds...)
+	return out.String(), err
 }
 
-func run(cmds ...string) (string, error) {
+func run(out io.Writer, cmds ...string) error {
 	// Wrap the command with `sh -c '<command>'`
 	wrap := []string{"sh", "-c", `"`}
 	wrap = append(wrap, cmds...)
 	cmds = append(wrap, `"`)
 	name, args, err := quote(cmds)
 	if err != nil {
-		return "", err
+		return err
 	}
 	cmd := exec.Command(name, args...)
-	var out bytes.Buffer
-	cmd.Stdout = &out
+	cmd.Stdout = out
 	cmd.Stdin = os.Stdin
-	cmd.Stderr = &out
-	err = cmd.Run()
-	return out.String(), err
+	cmd.Stderr = out
+	return cmd.Run()
 }
 
 // ExitStatus tries to extract the exit status from the error.
